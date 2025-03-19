@@ -86,6 +86,9 @@ mirror_to_github:
         Write-Host "Checking out origin/main branch"
         git checkout origin/main
 
+        Write-Host "Git LFS Version"
+        git lfs --version
+
         Write-Host "Verifying LFS Objects"
         git lfs verify
 
