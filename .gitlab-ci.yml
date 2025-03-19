@@ -4,6 +4,9 @@ stages:
 mirror_to_github:
   stage: mirror
   image: alpine/git:latest
+  tags:
+    - shared
+    - git-lfs
   script:
     - |
       apk update && apk add git-lfs
