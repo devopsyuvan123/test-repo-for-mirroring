@@ -70,11 +70,8 @@ mirror_to_github:
       Write-Host "Checking out origin/main branch"
       git checkout origin/main
 
-      Write-Host "Pulling changes from github"
-      git pull github main # Pull remote changes
-
       Write-Host "Starting git push"
-      git push github main:main
+      git push github main # Push initial commit
       if ($LASTEXITCODE -ne 0) { exit 1 }
       Write-Host "Completed git push"
 
