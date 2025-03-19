@@ -4,7 +4,8 @@ stages:
 mirror_to_github:
   stage: mirror
   tags:
-    - sunland
+    - shared
+    - git-lfs
   script:
     - |
       # Check if git-lfs is installed
@@ -70,8 +71,11 @@ mirror_to_github:
       Write-Host "Checking out origin/main branch"
       git checkout origin/main
 
+      Write-Host "Pulling changes from github"
+      git pull github main # Pull remote changes
+
       Write-Host "Starting git push"
-      git push github HEAD:main # Explicit push
+      git push github main:main
       if ($LASTEXITCODE -ne 0) { exit 1 }
       Write-Host "Completed git push"
 
