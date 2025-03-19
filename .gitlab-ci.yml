@@ -58,7 +58,7 @@ mirror_to_github:
       git fetch --all
       git lfs fetch --all
       git push --mirror github
-      git lfs push --mirror github
+      git lfs push github
   only:
     - branches
     - tags
