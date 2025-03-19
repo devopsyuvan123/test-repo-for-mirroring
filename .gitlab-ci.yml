@@ -4,22 +4,47 @@ stages:
 mirror_to_github:
   stage: mirror
   tags:
-    - sunland
+    - shared
+    - git-lfs
   script:
     - |
-      # ... (Git LFS installation) ...
+      # Check if git-lfs is installed
+      if (!(Get-Command git-lfs -ErrorAction SilentlyContinue)) {
+        Write-Host "git-lfs is not installed. Attempting installation..."
+
+        # Download git-lfs (replace with the latest download URL)
+        $lfsDownloadUrl = "https://github.com/git-lfs/git-lfs/releases/latest/download/git-lfs-windows-amd64.zip"
+        $lfsZipFile = "$env:TEMP\git-lfs.zip"
+        $lfsExtractPath = "$env:ProgramFiles\Git LFS"
+
+        Invoke-WebRequest -Uri $lfsDownloadUrl -OutFile $lfsZipFile
+        Expand-Archive -Path $lfsZipFile -DestinationPath $lfsExtractPath -Force
+
+        # Add git-lfs to PATH
+        $env:Path += ";$lfsExtractPath"
+        [Environment]::SetEnvironmentVariable("Path", $env:Path, "User")
+
+        # Verify installation
+        git-lfs --version
+      } else {
+        Write-Host "git-lfs is already installed."
+      }
 
       git lfs install
 
       $GITHUB_API_URL = "https://api.github.com/repos/$env:GITHUB_REPO"
       $GITHUB_AUTH_HEADER = @{ "Authorization" = "token $env:GITHUB_TOKEN" }
 
-      Write-Host "Authorization Header: $($GITHUB_AUTH_HEADER.Authorization)" # Print the header
-
       try {
-          # ... (Repository existence check) ...
+          $Response = Invoke-WebRequest -Uri $GITHUB_API_URL -Headers $GITHUB_AUTH_HEADER -Method Get -ErrorAction Stop
+          $GITHUB_REPO_EXISTS = $Response.StatusCode
       } catch {
-          # ... (Error handling) ...
+          if ($_.Exception.Response.StatusCode -eq 404) {
+              $GITHUB_REPO_EXISTS = 404
+          } else {
+              Write-Error $_ # Re-throw other errors
+              exit 1
+          }
       }
 
       if ($GITHUB_REPO_EXISTS -eq 404) {
@@ -30,7 +55,11 @@ mirror_to_github:
         Write-Host "GitHub repository exists. Updating..."
       }
 
-      # ... (Git mirroring) ...
+      git remote add github "https://oauth2:$env:GITHUB_TOKEN@github.com/$env:GITHUB_REPO.git"
+      git fetch --all
+      git lfs fetch --all
+      git push --mirror github
+      git lfs push --mirror github
   only:
     - branches
     - tags
