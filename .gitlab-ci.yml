@@ -67,7 +67,8 @@ mirror_to_github:
 
         # Debugging commands
         pwd
-        ls -a
+        Get-ChildItem -Force
+        Write-Host "Git Dir Exists: $(Test-Path .git)"
         git status
 
         # Check if the 'github' remote already exists
