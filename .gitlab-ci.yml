@@ -5,22 +5,23 @@ mirror_to_github:
   stage: mirror
   image: alpine/git:latest
   script:
-    - apk update && apk add git-lfs
-    - git lfs install
-    - GITHUB_API_URL="https://api.github.com/repos/${GITHUB_REPO}"
-    - GITHUB_AUTH_HEADER="Authorization: token ${GITHUB_TOKEN}"
-    - GITHUB_REPO_EXISTS=$(curl -s -o /dev/null -w '%{http_code}' -H "${GITHUB_AUTH_HEADER}" "${GITHUB_API_URL}")
-    - if [ "$GITHUB_REPO_EXISTS" -eq 404 ]; then
+    - |
+      apk update && apk add git-lfs
+      git lfs install
+      GITHUB_API_URL="https://api.github.com/repos/${GITHUB_REPO}"
+      GITHUB_AUTH_HEADER="Authorization: token ${GITHUB_TOKEN}"
+      GITHUB_REPO_EXISTS=$(curl -s -o /dev/null -w '%{http_code}' -H "${GITHUB_AUTH_HEADER}" "${GITHUB_API_URL}")
+      if [ "$GITHUB_REPO_EXISTS" -eq 404 ]; then
         echo "GitHub repository does not exist. Creating..."
         curl -X POST -H "${GITHUB_AUTH_HEADER}" -d '{"name":"'$(basename "${GITHUB_REPO}")'"}' "https://api.github.com/user/repos"
       else
         echo "GitHub repository exists. Updating..."
       fi
-    - git remote add github "https://oauth2:${GITHUB_TOKEN}@github.com/${GITHUB_REPO}.git"
-    - git fetch --all
-    - git lfs fetch --all
-    - git push --mirror github
-    - git lfs push --mirror github
+      git remote add github "https://oauth2:${GITHUB_TOKEN}@github.com/${GITHUB_REPO}.git"
+      git fetch --all
+      git lfs fetch --all
+      git push --mirror github
+      git lfs push --mirror github
   only:
     - branches
     - tags
