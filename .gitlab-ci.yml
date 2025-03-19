@@ -12,7 +12,8 @@ mirror_to_github:
           Write-Host "git-lfs is not installed. Attempting installation..."
 
           # Download git-lfs (replace with the latest download URL)
-          $lfsDownloadUrl = "https://github.com/git-lfs/git-lfs/releases/latest/download/git-lfs-windows-amd64.zip"
+          $lfsDownloadUrl =
+            "https://github.com/git-lfs/git-lfs/releases/latest/download/git-lfs-windows-amd64.zip"
           $lfsZipFile = "$env:TEMP\git-lfs.zip"
           $lfsExtractPath = "$env:ProgramFiles\Git LFS"
 
@@ -35,7 +36,8 @@ mirror_to_github:
         $GITHUB_AUTH_HEADER = @{ "Authorization" = "token $env:GITHUB_TOKEN" }
 
         try {
-          $Response = Invoke-WebRequest -Uri $GITHUB_API_URL -Headers $GITHUB_AUTH_HEADER -Method Get -ErrorAction Stop
+          $Response =
+            Invoke-WebRequest -Uri $GITHUB_API_URL -Headers $GITHUB_AUTH_HEADER -Method Get -ErrorAction Stop
           $GITHUB_REPO_EXISTS = $Response.StatusCode
         } catch {
           if ($_.Exception.Response.StatusCode -eq 404) {
@@ -48,7 +50,8 @@ mirror_to_github:
 
         if ($GITHUB_REPO_EXISTS -eq 404) {
           Write-Host "GitHub repository does not exist. Creating..."
-          $Body = @{ "name" = "$(Split-Path -Leaf $env:GITHUB_REPO)" } | ConvertTo-Json
+          $Body = @{ "name" = "$(Split-Path -Leaf $env:GITHUB_REPO)" } |
+            ConvertTo-Json
           $WebParams = @{
             Uri         = "https://api.github.com/user/repos"
             Headers     = $GITHUB_AUTH_HEADER
@@ -83,13 +86,16 @@ mirror_to_github:
         Write-Host "Checking out origin/main branch"
         git checkout origin/main
 
+        Write-Host "Verifying LFS Objects"
+        git lfs verify
+
         Write-Host "Starting git push"
         git push github origin/main:refs/heads/main # Explicit push
         if ($LASTEXITCODE -ne 0) { exit 1 }
         Write-Host "Completed git push"
 
         git lfs fetch --all
-        git lfs push github
+        git lfs push github --all
 
         git config --global --unset-all http.proxy
         git config --global --unset-all https.proxy
