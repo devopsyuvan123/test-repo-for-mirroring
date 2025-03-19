@@ -63,9 +63,14 @@ mirror_to_github:
         Write-Host "github remote already exists"
       }
 
+      Write-Host "Current Branch: $(git branch --show-current)"
       git fetch --all
       git lfs fetch --all
+
+      Write-Host "Starting git push --mirror"
       git push --mirror github
+      Write-Host "Completed git push --mirror"
+
       git lfs push github
   only:
     - branches
