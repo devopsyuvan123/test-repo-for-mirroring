@@ -84,7 +84,7 @@ mirror_to_github:
         git checkout origin/main
 
         Write-Host "Starting git push"
-        git push github origin/main:main # Very explicit push
+        git push github origin/main:refs/heads/main # Explicit push
         if ($LASTEXITCODE -ne 0) { exit 1 }
         Write-Host "Completed git push"
 
