@@ -54,7 +54,15 @@ mirror_to_github:
         Write-Host "GitHub repository exists. Updating..."
       }
 
-      git remote add github "https://oauth2:$env:GITHUB_TOKEN@github.com/$env:GITHUB_REPO.git"
+      # Check if the 'github' remote already exists
+      $remoteExists = git remote | Select-String -Pattern "github" -Quiet
+      if (-not $remoteExists) {
+        git remote add github "https://oauth2:$env:GITHUB_TOKEN@github.com/$env:GITHUB_REPO.git"
+        Write-Host "Added github remote"
+      } else {
+        Write-Host "github remote already exists"
+      }
+
       git fetch --all
       git lfs fetch --all
       git push --mirror github
