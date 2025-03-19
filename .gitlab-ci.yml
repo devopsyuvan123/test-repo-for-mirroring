@@ -32,12 +32,14 @@ mirror_to_github:
       git lfs install
 
       $GITHUB_API_URL = "https://api.github.com/repos/$env:GITHUB_REPO"
-      $GITHUB_AUTH_HEADER = "Authorization: token $env:GITHUB_TOKEN"
-      $GITHUB_REPO_EXISTS = $(curl -s -o /dev/null -w '%{http_code}' -H "$GITHUB_AUTH_HEADER" "$GITHUB_API_URL")
+      $GITHUB_AUTH_HEADER = @{ "Authorization" = "$env:GITHUB_TOKEN" }
+      $Response = Invoke-WebRequest -Uri $GITHUB_API_URL -Headers $GITHUB_AUTH_HEADER -Method Get -ErrorAction Stop
+      $GITHUB_REPO_EXISTS = $Response.StatusCode
 
       if ($GITHUB_REPO_EXISTS -eq 404) {
         Write-Host "GitHub repository does not exist. Creating..."
-        curl -X POST -H "$GITHUB_AUTH_HEADER" -d '{"name":"$(Split-Path -Leaf $env:GITHUB_REPO)"}' "https://api.github.com/user/repos"
+        $Body = @{ "name" = "$(Split-Path -Leaf $env:GITHUB_REPO)" } | ConvertTo-Json
+        Invoke-WebRequest -Uri "https://api.github.com/user/repos" -Headers $GITHUB_AUTH_HEADER -Method Post -Body $Body -ContentType "application/json" -ErrorAction Stop
       } else {
         Write-Host "GitHub repository exists. Updating..."
       }
