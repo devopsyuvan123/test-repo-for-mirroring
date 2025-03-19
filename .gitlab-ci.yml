@@ -52,12 +52,23 @@ mirror_to_github:
           Write-Host "GitHub repository does not exist. Creating..."
           $Body = @{ "name" = "$(Split-Path -Leaf $env:GITHUB_REPO)" } |
             ConvertTo-Json
-          Invoke-WebRequest -Uri "https://api.github.com/user/repos" -Headers
-            $GITHUB_AUTH_HEADER -Method Post -Body $Body -ContentType
-            "application/json" -ErrorAction Stop
+          $WebParams = @{
+            Uri         = "https://api.github.com/user/repos"
+            Headers     = $GITHUB_AUTH_HEADER
+            Method      = "Post"
+            Body        = $Body
+            ContentType = "application/json"
+            ErrorAction = "Stop"
+          }
+          Invoke-WebRequest @WebParams
         } else {
           Write-Host "GitHub repository exists. Updating..."
         }
+
+        # Debugging commands
+        pwd
+        ls -a
+        git status
 
         # Check if the 'github' remote already exists
         $remoteExists = git remote | Select-String -Pattern "github" -Quiet
