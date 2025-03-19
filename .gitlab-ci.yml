@@ -67,12 +67,17 @@ mirror_to_github:
       git fetch --all
       git lfs fetch --all
 
-      Write-Host "Starting git push --mirror"
-      git push --mirror github # Removed --force
-      if ($LASTEXITCODE -ne 0) { exit 1 } # check return code.
-      Write-Host "Completed git push --mirror"
+      Write-Host "Starting git push"
+      git push -v github main:main # Explicit push with verbose output
+      if ($LASTEXITCODE -ne 0) { exit 1 }
+      Write-Host "Completed git push"
 
       git lfs push github
+
+      git config --global --unset-all http.proxy
+      git config --global --unset-all https.proxy
+
+      git --version
   only:
     - branches
     - tags
