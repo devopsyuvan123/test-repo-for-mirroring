@@ -4,11 +4,33 @@ stages:
 mirror_to_github:
   stage: mirror
   tags:
-    - sunland
+    - shared
+    - git-lfs
   script:
     - |
-      # Install git-lfs within the alpine/git image
-      docker run --rm -v "$(pwd):/repo" alpine/git:latest sh -c "apk update && apk add git-lfs && cd /repo && git lfs install"
+      # Check if git-lfs is installed
+      if (!(Get-Command git-lfs -ErrorAction SilentlyContinue)) {
+        Write-Host "git-lfs is not installed. Attempting installation..."
+
+        # Download git-lfs (replace with the latest download URL)
+        $lfsDownloadUrl = "https://github.com/git-lfs/git-lfs/releases/latest/download/git-lfs-windows-amd64.zip"
+        $lfsZipFile = "$env:TEMP\git-lfs.zip"
+        $lfsExtractPath = "$env:ProgramFiles\Git LFS"
+
+        Invoke-WebRequest -Uri $lfsDownloadUrl -OutFile $lfsZipFile
+        Expand-Archive -Path $lfsZipFile -DestinationPath $lfsExtractPath -Force
+
+        # Add git-lfs to PATH
+        $env:Path += ";$lfsExtractPath"
+        [Environment]::SetEnvironmentVariable("Path", $env:Path, "User")
+
+        # Verify installation
+        git-lfs --version
+      } else {
+        Write-Host "git-lfs is already installed."
+      }
+
+      git lfs install
 
       $GITHUB_API_URL = "https://api.github.com/repos/$env:GITHUB_REPO"
       $GITHUB_AUTH_HEADER = "Authorization: token $env:GITHUB_TOKEN"
