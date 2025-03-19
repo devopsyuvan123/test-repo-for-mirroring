@@ -7,7 +7,7 @@ mirror_to_github:
   script:
     - apk update && apk add git-lfs
     - git lfs install
-    - export GITHUB_REPO_EXISTS=$(curl -s -o /dev/null -w "%{http_code}" -H "Authorization: token ${GITHUB_TOKEN}" "https://api.github.com/repos/${GITHUB_REPO}")
+    - export GITHUB_REPO_EXISTS="$(curl -s -o /dev/null -w '%{http_code}' -H 'Authorization: token ${GITHUB_TOKEN}' 'https://api.github.com/repos/${GITHUB_REPO}')"
     - if [ "$GITHUB_REPO_EXISTS" -eq 404 ]; then
         echo "GitHub repository does not exist. Creating..."
         curl -X POST -H "Authorization: token ${GITHUB_TOKEN}" -d '{"name":"'$(basename "${GITHUB_REPO}")'"}' "https://api.github.com/user/repos"
