@@ -67,9 +67,9 @@ mirror_to_github:
       git fetch --all
       git lfs fetch --all
 
-      Write-Host "Starting git push --mirror"
-      git push --mirror github
-      Write-Host "Completed git push --mirror"
+      Write-Host "Starting git push --mirror --force"
+      git push --mirror --force github # Force push
+      Write-Host "Completed git push --mirror --force"
 
       git lfs push github
   only:
