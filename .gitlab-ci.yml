@@ -67,11 +67,11 @@ mirror_to_github:
       git fetch --all
       git lfs fetch --all
 
-      Write-Host "Checking out main branch"
-      git checkout main # Force checkout of main branch
+      Write-Host "Checking out origin/main branch"
+      git checkout origin/main # Explicit checkout of origin/main
 
       Write-Host "Starting git push"
-      git push github main:main # Explicit push
+      git push github main:main
       if ($LASTEXITCODE -ne 0) { exit 1 }
       Write-Host "Completed git push"
 
@@ -81,6 +81,8 @@ mirror_to_github:
       git config --global --unset-all https.proxy
 
       git --version
+      git remote -v
+      git branch -a
   only:
     - branches
     - tags
