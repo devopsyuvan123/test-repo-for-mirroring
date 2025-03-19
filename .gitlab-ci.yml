@@ -4,8 +4,7 @@ stages:
 mirror_to_github:
   stage: mirror
   tags:
-    - shared
-    - git-lfs
+    - sunland
   script:
     - |
       # Check if git-lfs is installed
