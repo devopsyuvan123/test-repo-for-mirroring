@@ -8,52 +8,62 @@ mirror_to_github:
   script:
     - |
       # Debugging output
-      echo "Mirroring to GitHub..."
-      echo "Current branch: $(git branch --show-current)"
+      Write-Output "Mirroring to GitHub..."
+      Write-Output "Current branch: $(git branch --show-current)"
       git --version
-      git lfs version || echo "Git LFS not installed"
-      echo "PATH: $PATH"
+      git lfs version 2>$null || Write-Output "Git LFS not installed"
+      Write-Output "Path: $env:PATH"
 
       # Configure Git (optional: set user for commits if needed)
       git config --global user.email "yuvanshankars@vyapisoft.com"
       git config --global user.name "GitLab CI"
 
+      # Ensure we’re in the correct directory (GitLab CI working dir)
+      Set-Location -Path $env:CI_PROJECT_DIR
+
       # Add GitHub remote if it doesn’t exist
-      if ! git remote get-url github >/dev/null 2>&1; then
+      if (-not (git remote get-url github 2>$null)) {
         git remote add github "https://oauth2:$GITHUB_TOKEN@github.com/devopsyuvan123/test-repo-for-mirroring.git"
-        echo "Remote added"
-      else
-        echo "Remote already exists"
-      fi
+        Write-Output "Remote added"
+      } else {
+        Write-Output "Remote already exists"
+      }
 
       # Checkout the main branch explicitly
-      git checkout main || git checkout -b main
+      try {
+        git checkout main 2>$null || git checkout -b main
+      } catch {
+        Write-Output "Failed to checkout main, creating it"
+        git checkout -b main
+      }
 
       # Fetch the remote main branch
-      git fetch github main || echo "No main branch on GitHub yet"
+      git fetch github main 2>$null || Write-Output "No main branch on GitHub yet"
 
       # Check if local main is up to date with GitHub
-      if [ "$(git rev-parse HEAD)" = "$(git rev-parse github/main 2>/dev/null)" ]; then
-        echo "Local main branch is up to date with GitHub."
-      else
+      $localHead = git rev-parse HEAD
+      $githubHead = git rev-parse github/main 2>$null
+      if ($localHead -eq $githubHead) {
+        Write-Output "Local main branch is up to date with GitHub."
+      } else {
         # Force push to GitHub
         git push github main:main --force
-        if [ $? -eq 0 ]; then
-          echo "Mirroring successful"
-        else
-          echo "Mirroring failed"
+        if ($LASTEXITCODE -eq 0) {
+          Write-Output "Mirroring successful"
+        } else {
+          Write-Output "Mirroring failed"
           exit 1
-        fi
-      fi
+        }
+      }
 
       # Push Git LFS objects (if applicable)
-      if command -v git-lfs >/dev/null 2>&1; then
-        echo "Pushing Git LFS objects..."
+      if (Get-Command git-lfs -ErrorAction SilentlyContinue) {
+        Write-Output "Pushing Git LFS objects..."
         git lfs push --all github main
-        if [ $? -ne 0 ]; then
-          echo "Git LFS push failed"
+        if ($LASTEXITCODE -ne 0) {
+          Write-Output "Git LFS push failed"
           exit 1
-        fi
-      fi
+        }
+      }
   only:
     - main
