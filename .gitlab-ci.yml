@@ -6,52 +6,30 @@ mirror_to_github:
   tags:
     - sunland
   script:
-    - |
-      # Debugging
-      echo "Mirroring to GitHub..."
-      echo "Current branch: $(git branch --show-current)"
-      git --version
-      git-lfs --version
-      echo "Path: $env:PATH"
+    - echo "Mirroring to GitHub..."
+    - echo "Current branch: $(git branch --show-current)"
+    - git --version
+    - git-lfs --version
 
-      # Initialize git repository.
-      if (!(Test-Path ".git")) {
-        git init
-      }
+    # Configure Git
+    - git config --global user.email "yuvanshankars@vyapisoft.com"
+    - git config --global user.name "Yuvan Shankar S"
 
-      # Add remote if it doesn't exist
-      if (-not (git remote get-url github)) {
-        git remote add github "https://oauth2:$GITHUB_TOKEN@github.com/devopsyuvan123/test-repo-for-mirroring"
-        echo "Remote added"
-      } else {
-        echo "Remote already exists"
-      }
+    # Ensure the repo is initialized
+    - if [ ! -d ".git" ]; then git init; fi
 
-      # Fetch the remote main branch
-      git fetch github main
+    # Add the GitHub remote if it doesn't exist
+    - if ! git remote | grep -q "github"; then
+        git remote add github "https://oauth2:${GITHUB_TOKEN}@github.com/devopsyuvan123/test-repo-for-mirroring.git";
+      fi
 
-      # Check if the local main branch is up to date with the remote
-      if ((git rev-parse origin/main) -eq (git rev-parse github/main)) {
-        echo "Local main branch is up to date."
-      } else {
-        # Force push to GitHub
-        git push github origin/main:refs/heads/main --force
-        if ($LASTEXITCODE -eq 0) {
-          echo "Mirroring successful"
-        } else {
-          echo "Mirroring failed"
-          exit 1
-        }
-      }
+    # Fetch the latest from GitHub
+    - git fetch github main || true
 
-      # Git LFS push (if applicable)
-      if (Get-Command git-lfs -ErrorAction SilentlyContinue) {
-        echo "Pushing Git LFS objects..."
-        git lfs push --all github
-        if ($LASTEXITCODE -ne 0) {
-          echo "Git LFS push failed"
-          exit 1
-        }
-      }
+    # Push changes from GitLab to GitHub
+    - git push --mirror "https://oauth2:${GITHUB_TOKEN}@github.com/devopsyuvan123/test-repo-for-mirroring.git"
+
+    # Push Git LFS objects (if applicable)
+    - git lfs push --all github || true
   only:
     - main
