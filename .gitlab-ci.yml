@@ -16,7 +16,7 @@ mirror_to_github:
 
       # Add remote if it doesn't exist
       if [[ -z $(git remote get-url github) ]]; then
-        git remote add github "https://oauth2:$GITHUB_TOKEN@github.com/devopsyuvan123/gitlab-mirroring-test-github.git"
+        git remote add github "https://oauth2:$GITHUB_TOKEN@github.com/devopsyuvan123/test-repo-for-mirroring.git"
         echo "Remote added"
       else
         echo "Remote already exists"
