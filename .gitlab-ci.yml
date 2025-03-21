@@ -13,7 +13,7 @@ mirror_to_github:
 
     # Configure Git
     - git config --global user.email "yuvanshankars@vyapisoft.com"
-    - git config --global user.name "Yuvan Shankar S"
+    - git config --global user.name "YuvanShankarS"
 
     # Ensure the repo is initialized
     - if [ ! -d ".git" ]; then git init; fi
