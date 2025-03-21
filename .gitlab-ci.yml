@@ -2,113 +2,47 @@ stages:
   - mirror
 
 mirror_to_github:
-    stage: mirror
-    tags:
-      - sunland
-    script:
-      - |
-        # Check if git-lfs is installed
-        if (!(Get-Command git-lfs -ErrorAction SilentlyContinue)) {
-          Write-Host "git-lfs is not installed. Attempting installation..."
+  stage: mirror
+  tags:
+    - sunland
+  script:
+    - |
+      # Debugging
+      echo "Mirroring to GitHub..."
+      echo "Current branch: $(git branch --show-current)"
+      git --version
+      git-lfs --version
+      echo "Path: $env:PATH"
 
-          # Download git-lfs (replace with the latest download URL)
-          $lfsDownloadUrl =
-            "https://github.com/git-lfs/git-lfs/releases/latest/download/git-lfs-windows-amd64.zip"
-          $lfsZipFile = "$env:TEMP\git-lfs.zip"
-          $lfsExtractPath = "$env:ProgramFiles\Git LFS"
+      # Add remote if it doesn't exist
+      if [[ -z $(git remote get-url github) ]]; then
+        git remote add github "https://oauth2:$GITHUB_TOKEN@github.com/devopsyuvan123/gitlab-mirroring-test-github.git"
+        echo "Remote added"
+      else
+        echo "Remote already exists"
+      fi
 
-          Invoke-WebRequest -Uri $lfsDownloadUrl -OutFile $lfsZipFile
-          Expand-Archive -Path $lfsZipFile -DestinationPath $lfsExtractPath -Force
+      # Fetch the remote main branch
+      git fetch github main
 
-          # Add git-lfs to PATH
-          $env:Path += ";$lfsExtractPath"
-          [Environment]::SetEnvironmentVariable("Path", $env:Path, "User")
-
-          # Verify installation
-          git-lfs --version
-        } else {
-          Write-Host "git-lfs is already installed."
-        }
-
-        git lfs install
-
-        $GITHUB_API_URL = "https://api.github.com/repos/$env:GITHUB_REPO"
-        $GITHUB_AUTH_HEADER = @{ "Authorization" = "token $env:GITHUB_TOKEN" }
-
-        try {
-          $Response =
-            Invoke-WebRequest -Uri $GITHUB_API_URL -Headers $GITHUB_AUTH_HEADER -Method Get -ErrorAction Stop
-          $GITHUB_REPO_EXISTS = $Response.StatusCode
-        } catch {
-          if ($_.Exception.Response.StatusCode -eq 404) {
-            $GITHUB_REPO_EXISTS = 404
-          } else {
-            Write-Error $_ # Re-throw other errors
+      # Check if the local main branch is up to date with the remote
+      if [[ $(git rev-parse origin/main) == $(git rev-parse github/main) ]]; then
+        echo "Local main branch is up to date."
+      else
+          # Force push to GitHub
+          git push github origin/main:refs/heads/main --force
+          if [ $? -eq 0 ]; then
+            echo "Mirroring successful"
+          else
+            echo "Mirroring failed"
             exit 1
-          }
-        }
+          fi
+      fi
 
-        if ($GITHUB_REPO_EXISTS -eq 404) {
-          Write-Host "GitHub repository does not exist. Creating..."
-          $Body = @{ "name" = "$(Split-Path -Leaf $env:GITHUB_REPO)" } |
-            ConvertTo-Json
-          $WebParams = @{
-            Uri         = "https://api.github.com/user/repos"
-            Headers     = $GITHUB_AUTH_HEADER
-            Method      = "Post"
-            Body        = $Body
-            ContentType = "application/json"
-            ErrorAction = "Stop"
-          }
-          Invoke-WebRequest @WebParams
-        } else {
-          Write-Host "GitHub repository exists. Updating..."
-        }
-
-        # Debugging commands
-        pwd
-        Get-ChildItem -Force
-        Write-Host "Git Dir Exists: $(Test-Path .git)"
-        git status
-
-        # Check if the 'github' remote already exists
-        $remoteExists = git remote | Select-String -Pattern "github" -Quiet
-        if (-not $remoteExists) {
-          git remote add github "https://oauth2:$env:GITHUB_TOKEN@github.com/$env:GITHUB_REPO.git"
-          Write-Host "Added github remote"
-        } else {
-          Write-Host "github remote already exists"
-        }
-
-        Write-Host "Current Branch: $(git branch --show-current)"
-        git fetch --all
-
-        Write-Host "Checking out origin/main branch"
-        git checkout origin/main
-
-        Write-Host "Git LFS Version"
-        git lfs --version
-
-        Write-Host "Verifying LFS Objects"
-        git lfs verify
-
-        Write-Host "Starting git push"
-        git push github origin/main:refs/heads/main # Explicit push
-        if ($LASTEXITCODE -ne 0) { exit 1 }
-        Write-Host "Completed git push"
-
-        git lfs fetch --all
-        git lfs push github --all
-
-        git config --global --unset-all http.proxy
-        git config --global --unset-all https.proxy
-        git config --global push.default simple
-        git config --global remote.pushDefault ""
-
-        git --version
-        git remote -v
-        git branch -a
-        git ls-remote github
-    only:
-      - branches
-      - tags
+      # Git LFS push (if applicable)
+      if command -v git-lfs &> /dev/null; then
+        echo "Pushing Git LFS objects..."
+        git lfs push --all github
+      fi
+  only:
+    - main
