@@ -34,20 +34,24 @@ mirror_to_github:
       if ((git rev-parse origin/main) -eq (git rev-parse github/main)) {
         echo "Local main branch is up to date."
       } else {
-          # Force push to GitHub
-          git push github origin/main:refs/heads/main --force
-          if ($LASTEXITCODE -eq 0) {
-            echo "Mirroring successful"
-          } else {
-            echo "Mirroring failed"
-            exit 1
-          }
+        # Force push to GitHub
+        git push github origin/main:refs/heads/main --force
+        if ($LASTEXITCODE -eq 0) {
+          echo "Mirroring successful"
+        } else {
+          echo "Mirroring failed"
+          exit 1
+        }
       }
 
       # Git LFS push (if applicable)
       if (Get-Command git-lfs -ErrorAction SilentlyContinue) {
         echo "Pushing Git LFS objects..."
         git lfs push --all github
+        if ($LASTEXITCODE -ne 0) {
+          echo "Git LFS push failed"
+          exit 1
+        }
       }
   only:
     - main
