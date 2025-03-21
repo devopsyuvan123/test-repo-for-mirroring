@@ -14,35 +14,40 @@ mirror_to_github:
       git-lfs --version
       echo "Path: $env:PATH"
 
+      # Initialize git repository.
+      if (!(Test-Path ".git")) {
+        git init
+      }
+
       # Add remote if it doesn't exist
-      if [[ -z $(git remote get-url github) ]]; then
-        git remote add github "https://oauth2:$GITHUB_TOKEN@github.com/devopsyuvan123/test-repo-for-mirroring.git"
+      if (-not (git remote get-url github)) {
+        git remote add github "https://oauth2:$GITHUB_TOKEN@github.com/devopsyuvan123/gitlab-mirroring-test-github.git"
         echo "Remote added"
-      else
+      } else {
         echo "Remote already exists"
-      fi
+      }
 
       # Fetch the remote main branch
       git fetch github main
 
       # Check if the local main branch is up to date with the remote
-      if [[ $(git rev-parse origin/main) == $(git rev-parse github/main) ]]; then
+      if ((git rev-parse origin/main) -eq (git rev-parse github/main)) {
         echo "Local main branch is up to date."
-      else
+      } else {
           # Force push to GitHub
           git push github origin/main:refs/heads/main --force
-          if [ $? -eq 0 ]; then
+          if ($LASTEXITCODE -eq 0) {
             echo "Mirroring successful"
-          else
+          } else {
             echo "Mirroring failed"
             exit 1
-          fi
-      fi
+          }
+      }
 
       # Git LFS push (if applicable)
-      if command -v git-lfs &> /dev/null; then
+      if (Get-Command git-lfs -ErrorAction SilentlyContinue) {
         echo "Pushing Git LFS objects..."
         git lfs push --all github
-      fi
+      }
   only:
     - main
